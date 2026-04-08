@@ -8,6 +8,8 @@ from queue import Queue
 from Bio import Entrez
 import config
 import constants
+from huggingface_hub import HfApi
+import os
 
 Entrez.email = config.NCBI_EMAIL
 
@@ -225,6 +227,22 @@ class ParallelOmniSystem:
         search_thread.join()
         harvest_thread.join()
         writer_thread.join()
+
+        # --- NEW HUGGING FACE UPLOAD STEP ---
+        print("\n🚀 Uploading massive FASTA file to Hugging Face...")
+        try:
+            api = HfApi()
+            api.upload_file(
+                path_or_fileobj=config.SEQUENCE_FILE, # The local 700MB file
+                path_in_repo="plas_kmer_sequences.fasta", # What to call it on Hugging Face
+                repo_id="YourUsername/Afrigen-Plasmid-Data", # UPDATE THIS to your HF username and dataset
+                repo_type="dataset",
+                token=os.environ.get("HF_TOKEN") # Safely grabs the password from GitHub Secrets
+            )
+            print("✅ Successfully pushed to Hugging Face!")
+        except Exception as e:
+            print(f"❌ Hugging Face upload failed: {e}")
+        # ------------------------------------
 
         total_time = round((time.time() - start_time) / 60, 2)
         print(f"\n{'=' * 40}\n✨ MISSION COMPLETE\nTotal Time: {total_time} minutes\n{'=' * 40}")
