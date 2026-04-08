@@ -1,3 +1,4 @@
-biopython==1.83
-pandas==2.2.0
+streamlit
+pandas
+biopython
 huggingface_hub
