@@ -7,3 +7,6 @@ python-dotenv
 scikit-learn
 numpy
 plotly
+bokeh
+dna_features_viewer
+matplotlib
