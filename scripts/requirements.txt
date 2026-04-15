@@ -10,3 +10,5 @@ plotly
 bokeh
 dna_features_viewer
 matplotlib
+fastparquet
+pyarrow
