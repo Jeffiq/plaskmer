@@ -43,20 +43,32 @@ def find_database_file(filename):
         return path_github
         
     # 3. CLOUD FALLBACK: Download directly from Hugging Face
+    import streamlit as st
     try:
         hf_token = os.environ.get("HF_TOKEN")
-        repo_id = getattr(config, 'HF_REPO_ID', "Jeffiq/Plaskmer") # Ensure your config has the correct repo ID
+        repo_id = getattr(config, 'HF_REPO_ID', "Jeffiq/Plaskmer") 
         
-        # Download the file from the cloud to the Streamlit server
-        cloud_path = hf_hub_download(
-            repo_id=repo_id, 
-            filename=f"data/{filename}", # Looks in the data/ folder of your HF repo
-            repo_type="dataset",
-            token=hf_token
-        )
+        # Try looking in the data/ folder first...
+        try:
+            cloud_path = hf_hub_download(
+                repo_id=repo_id, 
+                filename=f"data/{filename}", 
+                repo_type="dataset",
+                token=hf_token
+            )
+        except Exception:
+            # If not in data/, try looking in the main root folder...
+            cloud_path = hf_hub_download(
+                repo_id=repo_id, 
+                filename=filename, 
+                repo_type="dataset",
+                token=hf_token
+            )
+            
         return Path(cloud_path)
     except Exception as e:
-        # If it completely fails, it will return None and show your missing data warnings
+        # Stop hiding the error! Show exactly what Hugging Face is complaining about.
+        st.error(f"⚠️ Cloud Download Failed for '{filename}': {e}")
         return None
 
 # The single, high-performance database file
