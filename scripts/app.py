@@ -931,6 +931,15 @@ with tab7:
         
         with col_vis:
             st.markdown("#### 🔄 Circular Visualizer")
+            
+            # --- NEW: DYNAMIC ENZYME SELECTOR ---
+            common_enzymes = ["EcoRI", "BamHI", "HindIII", "XhoI", "NotI", "PstI", "SmaI", "SalI", "NdeI", "KpnI", "SacI"]
+            selected_enzymes = st.multiselect(
+                "✂️ Select Restriction Enzymes:", 
+                options=common_enzymes, 
+                default=["EcoRI", "BamHI"]
+            )
+            
             if len(selected_seq) > 0:
                 try:
                     # 1. Base Feature (The whole plasmid)
@@ -938,12 +947,18 @@ with tab7:
                         GraphicFeature(start=0, end=len(selected_seq), strand=+1, color="#cddc39", label="Backbone")
                     ]
                     
-                    # 2. Add Restriction Sites to make the map look professional
+                    # 2. Add Selected Restriction Sites dynamically
                     seq_obj = Seq(selected_seq)
-                    for site in Restriction.EcoRI.search(seq_obj):
-                        features.append(GraphicFeature(start=site-1, end=site, strand=+1, color="#ff4b4b", label="EcoRI"))
-                    for site in Restriction.BamHI.search(seq_obj):
-                        features.append(GraphicFeature(start=site-1, end=site, strand=+1, color="#2e66ff", label="BamHI"))
+                    # A nice palette to cycle through so each enzyme gets a unique color
+                    color_palette = ["#ff4b4b", "#2e66ff", "#00c241", "#ffa100", "#9c27b0", "#e91e63", "#00bcd4", "#795548"]
+                    
+                    for idx, enz_name in enumerate(selected_enzymes):
+                        enz_color = color_palette[idx % len(color_palette)]
+                        # Dynamically get the enzyme from Biopython
+                        if hasattr(Restriction, enz_name):
+                            enz_obj = getattr(Restriction, enz_name)
+                            for site in enz_obj.search(seq_obj):
+                                features.append(GraphicFeature(start=site-1, end=site, strand=+1, color=enz_color, label=enz_name))
 
                     # 3. Draw the Map
                     record = CircularGraphicRecord(sequence_length=len(selected_seq), features=features)
