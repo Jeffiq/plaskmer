@@ -561,7 +561,15 @@ with tab2:
                         if inc_genes: types.append("gene")
                         
                         with st.spinner("Harvesting via Parallel OmniSystem..."):
-                            bot = ParallelOmniSystem(target_org=target_org, selected_dbs=selected_dbs, types=types, target_goal=target_goal, push_to_hf=False)
+                            # 🚨 PASS THE DOWNLOADED HF FILE PATH DIRECTLY INTO THE HARVESTER
+                            bot = ParallelOmniSystem(
+                                target_org=target_org, 
+                                selected_dbs=selected_dbs, 
+                                types=types, 
+                                target_goal=target_goal, 
+                                push_to_hf=False,
+                                db_path=str(PARQUET_FILE) if 'PARQUET_FILE' in locals() and PARQUET_FILE else None
+                            )
                             bot.run_all_parallel()
                         st.success("✅ Local Harvest Complete!")
                                                                                     
@@ -602,7 +610,8 @@ with tab2:
                     from huggingface_hub import HfApi
                     import config
                     
-                    parquet_file = config.MASTER_PARQUET
+                    # 🚨 Use the actual file path that Streamlit downloaded
+                    parquet_file = str(PARQUET_FILE) if 'PARQUET_FILE' in locals() and PARQUET_FILE else config.MASTER_PARQUET
                     # 💡 Defaulting to your specified Hugging Face repo
                     repo_id = getattr(config, 'HF_REPO_ID', "Jeffiq/Plaskmer")
                     

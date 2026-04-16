@@ -21,7 +21,7 @@ if user_email:
 
 
 class ParallelOmniSystem:
-    def __init__(self, target_org, selected_dbs, types, target_goal, push_to_hf=False):
+    def __init__(self, target_org, selected_dbs, types, target_goal, push_to_hf=False, db_path=None):
         print("🚀 Initializing Parquet-Powered Parallel Pipeline...")
         
         self.target_org = target_org
@@ -32,7 +32,8 @@ class ParallelOmniSystem:
         self.existing_accs = set()
 
         # 1. Initialize Local Parquet Backup & Load Existing Accessions
-        self.parquet_file = config.MASTER_PARQUET
+        # 🚨 USE THE CACHED FILE APP.PY DOWNLOADED FROM HF, OTHERWISE FALLBACK
+        self.parquet_file = db_path if db_path else config.MASTER_PARQUET
         
         print(f"\n🎯 ALERTTTT! I AM SAVING THE FILE EXACTLY HERE: {os.path.abspath(self.parquet_file)}\n")
         
