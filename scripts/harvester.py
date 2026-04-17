@@ -268,7 +268,7 @@ class ParallelOmniSystem:
         t_writer = threading.Thread(target=self.consumer_parquet_writer)
         t_writer.start()
         
-        num_workers = 3
+        num_workers = 1
         workers = []
         for _ in range(num_workers):
             t = threading.Thread(target=self.worker_harvest)
