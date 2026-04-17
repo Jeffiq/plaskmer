@@ -23,6 +23,11 @@ from orf_blaster import identify_orf_via_blast
 import pyarrow.parquet as pq
 import config
 
+import gc
+# Add this right here with your other imports!
+from orf_processor import safe_batch_orf_extractor
+
+
 # Load local .env file
 load_dotenv()
 import warnings
@@ -573,7 +578,7 @@ with tab2:
                             )
                             bot.run_all_parallel()
                         st.success("✅ Local Harvest Complete!")
-                                                                                    
+                                                                                                        
                         # 1. Trigger Incremental K-mers
                         if run_kmer_calc and PARQUET_FILE and PARQUET_FILE.exists():
                             with st.spinner(f"🧬 Incrementally calculating {k_size}-mers for new sequences..."):
@@ -581,14 +586,22 @@ with tab2:
                                 if num_new_kmers > 0:
                                     st.success(f"✅ Added {num_new_kmers} new sequences to K-mer index!")
                         
-                        # 2. Trigger Incremental ORF Extraction
+                        # 2. 🚨 THE NEW ORF EXTRACTION BLOCK
                         if run_orf_calc and PARQUET_FILE and PARQUET_FILE.exists():
-                            with st.spinner(f"🧬 Extracting global ORFs for new sequences..."):
-                                orf_parquet_path, num_new_orfs = update_orf_database(PARQUET_FILE)
-                                if num_new_orfs > 0:
-                                    st.success(f"✅ Extracted and saved {num_new_orfs} new ORFs to the database!")
-                                else:
-                                    st.info("⚡ No new ORFs detected.")
+                            with st.spinner("🧬 Extracting global ORFs safely (Batches of 25)..."):
+                                # Ensure orf_parquet_path is a Path object so the HF upload block below doesn't break
+                                orf_parquet_path = Path("orf_database.parquet") 
+                                
+                                # Read the massive master database
+                                master_df = pd.read_parquet(PARQUET_FILE)
+                                
+                                # Run our new memory-safe script!
+                                safe_batch_orf_extractor(
+                                    master_df=master_df, 
+                                    orf_parquet_path=str(orf_parquet_path), 
+                                    batch_size=25, 
+                                    push_to_hf=upload_hf
+                                )
                         
                         # 3. Upload updated files to Hugging Face
                         if upload_hf:
@@ -600,6 +613,11 @@ with tab2:
                                 if run_orf_calc and 'orf_parquet_path' in locals() and orf_parquet_path.exists():
                                     push_to_huggingface(orf_parquet_path, orf_parquet_path.name)
                                 st.success("✅ Cloud Databases Synced Successfully!")
+                            # 🚨 FORCE STREAMLIT TO DUMP THE MASSIVE FILES FROM RAM
+                            import gc
+                            st.cache_data.clear()  # Clear Streamlit's temporary cache
+                            gc.collect()           # Force Python's Garbage Collector to empty the RAM
+                            st.balloons()
 
             # --- MANUAL CLOUD SYNC BLOCK ---
             with st.container(border=True):
@@ -634,7 +652,7 @@ with tab2:
                                 st.balloons()
                             except Exception as e:
                                 st.error(f"❌ Upload failed: {e}")
-                    
+
 
 # ==========================================
 # TAB 3: VIRTUAL PCR 
