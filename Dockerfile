@@ -2,23 +2,14 @@ FROM python:3.10
 
 WORKDIR /app
 
-# Install system dependencies if needed
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+# Install regex directly
+RUN pip install --no-cache-dir streamlit regex pandas biopython huggingface_hub python-dotenv scikit-learn numpy plotly bokeh dna_features_viewer matplotlib fastparquet pyarrow
 
-# Copy requirements
-COPY requirements.txt .
-
-# Upgrade pip and install requirements
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
-# Brute force install regex just in case
-RUN pip install regex
-
-# Copy the rest of the app
+# Copy everything
 COPY . .
 
-# Set environment variables to handle the port correctly
-ENV STREAMLIT_SERVER_PORT=7860
-ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
+# Explicitly expose the port HF wants
+EXPOSE 7860
 
-CMD ["streamlit", "run", "scripts/app.py"]
+# Run with the exact port HF expects for Docker
+CMD ["streamlit", "run", "scripts/app.py", "--server.port=7860", "--server.address=0.0.0.0"]
